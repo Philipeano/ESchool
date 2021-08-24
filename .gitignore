@@ -1,0 +1,5 @@
+ESchool/obj*
+ESchool/bin*
+
+.DS_Store
+.vs/
