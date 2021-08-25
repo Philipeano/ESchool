@@ -109,7 +109,8 @@ namespace ESchool.Controllers
         public async Task<ActionResult<IEnumerable<Teacher>>> GetTeacherWithFilters([FromQuery] string firstName, [FromQuery] string lastName)
         {
             return await _context.Teachers
-                .Where(t => t.FirstName = firstName && t.LastName = lastName);
+                .Where(t => t.FirstName == firstName && t.LastName == lastName)
+                .ToListAsync();
         }
 
     }
