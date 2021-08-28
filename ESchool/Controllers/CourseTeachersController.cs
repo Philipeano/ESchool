@@ -21,28 +21,35 @@ namespace ESchool.Controllers
         }
 
 
-        // Get all course teachers
-        // GET: api/CourseTeachers
+        // Get all course teachers, optionally filtered by courseId and/or teacherId
+        // GET: api/CourseTeachers?CourseId={courseId}&TeacherId={teacherId}
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CourseTeacher>>> GetCourseTeachers()
+        public async Task<ActionResult<IEnumerable<CourseTeacher>>> GetCourseTeachers([FromQuery(Name = "courseId")] long courseId, [FromQuery(Name = "teacherId")] long teacherId)
         {
-            return await _context.CourseTeachers
+            // Define a default query to fetch all course teachers unfiltered
+            IQueryable<CourseTeacher> query = _context.CourseTeachers
                 .Include(ct => ct.AssignedCourse)
-                .Include(ct => ct.AssignedTeacher)
-                .ToListAsync();
+                .Include(ct => ct.AssignedTeacher);
+
+            // If no URL parameters were specified for this request, return all query data 
+            if (Request.Query.Count == 0)
+                return await query.ToListAsync();
+
+            // If both URL parameters were provided, apply both filters to the query data
+            if (Request.Query.Count == 2 && Request.Query.ContainsKey("courseId") && Request.Query.ContainsKey("teacherId"))
+                return await query.Where(ct => ct.CourseId == courseId && ct.TeacherId == teacherId).ToListAsync();
+
+            // If only one of the URL parameters was provided, apply just the specified filter  
+            if (Request.Query.Count == 1 && Request.Query.ContainsKey("courseId"))
+                return await query.Where(ct => ct.CourseId == courseId).ToListAsync();
+
+            if (Request.Query.Count == 1 && Request.Query.ContainsKey("teacherId"))
+                return await query.Where(ct => ct.TeacherId == teacherId).ToListAsync();
+
+            // If none of the above conditions/scenarios apply, return a BadRequest response
+            return BadRequest();
         }
 
-        // Get a specific teacher that teaches a specific course
-        // GET: api/CourseTeachers?CourseId={courseId}&TeacherId={teacherId}
-        [HttpGet("CourseId={courseId}&TeacherId={teacherId}")]
-        public async Task<ActionResult<CourseTeacher>> GetSpecificCourseTeacher([FromQuery] long courseId, [FromQuery] long teacherId)
-        {
-            return await _context.CourseTeachers
-                .Where(ct => ct.CourseId == courseId && ct.TeacherId == teacherId)
-                .Include(ct => ct.AssignedCourse)
-                .Include(ct => ct.AssignedTeacher)
-                .FirstOrDefaultAsync();
-        }
 
         // Assign a specific teacher to teach a specific course
         // POST: api/CourseTeachers
@@ -93,7 +100,6 @@ namespace ESchool.Controllers
 
             return NoContent();
         }
-
 
 
 
